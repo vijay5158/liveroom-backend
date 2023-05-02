@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 import os
 from pathlib import Path
 from datetime import timedelta
+from google.oauth2 import service_account
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,7 +22,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+# SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = 'buhbjh554b6h6565bk5jn5jknknnlb565'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -32,7 +35,8 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
-    'channels',
+    # 'channels',
+    'daphne',
     'corsheaders',
     'django.contrib.admin',
     'django.contrib.sites',
@@ -44,13 +48,15 @@ INSTALLED_APPS = [
     'rest_framework',
     'allauth',
     'allauth.account',
-    'rest_auth.registration',
-    'Accounts',
-    'Classes',
+    # 'rest_auth.registration',
+    'Accounts.apps.AccountsConfig',
+    'Classes.apps.ClassesConfig',
     'rest_framework.authtoken',
-    'rest_auth',
+    # 'rest_auth',
     'storages',
     'whitenoise.runserver_nostatic',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
 ]
 SITE_ID = 1
 
@@ -87,17 +93,24 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'Liveroom.wsgi.application'
+# WSGI_APPLICATION = 'Liveroom.wsgi.application'
 ASGI_APPLICATION = "Liveroom.asgi.application"
+
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels_redis.core.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [("127.0.0.1", 6379)],
+#         },
+#     },
+# }
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
-        },
-    },
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
 }
+
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
@@ -116,6 +129,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 
 }
@@ -171,19 +185,64 @@ STATICFILES_STORAGE = (
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'Accounts.CustomUser'
 REST_AUTH_SERIALIZERS = {
-    'LOGIN_SERIALIZER': 'Accounts.serializers.loginSerializer',
+    # 'LOGIN_SERIALIZER': 'Accounts.serializers.loginSerializer',
                         'USER_DETAILS_SERIALIZER': 'Accounts.serializers.UserSerializer',
                         'TOKEN_SERIALIZER': 'Accounts.serializers.TokenSerializer'
 }
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=10),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "UPDATE_LAST_LOGIN": False,
 
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "VERIFYING_KEY": "",
+    "AUDIENCE": None,
+    "ISSUER": None,
+    "JSON_ENCODER": None,
+    "JWK_URL": None,
+    "LEEWAY": 0,
+
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
+
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_TYPE_CLAIM": "token_type",
+    "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
+
+    "JTI_CLAIM": "jti",
+
+    "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
+    "SLIDING_TOKEN_LIFETIME": timedelta(minutes=60),
+    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=30),
+
+    "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
+    "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",
+    "TOKEN_VERIFY_SERIALIZER": "rest_framework_simplejwt.serializers.TokenVerifySerializer",
+    "TOKEN_BLACKLIST_SERIALIZER": "rest_framework_simplejwt.serializers.TokenBlacklistSerializer",
+    "SLIDING_TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainSlidingSerializer",
+    "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
+  }
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_REQUIRED = True
 CSRF_COOKIE_NAME = "csrftoken"
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_VERIFICATION = 'none'
-DEFAULT_FILE_STORAGE = 'Liveroom.custom_azure.AzureMediaStorage'
+# Google cloud settings
+GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
+    os.path.join(BASE_DIR, 'liveroom5158-firebase-adminsdk-6wxsh-3f433c1a44.json')
+)
+GS_BUCKET_NAME = 'liveroom5158.appspot.com'
+# if not DEBUG:
+DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+    
 
-MEDIA_URL = os.environ.get('MEDIA_URL')
+MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 X_FRAME_OPTIONS = 'ALLOWALL'

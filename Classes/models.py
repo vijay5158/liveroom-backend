@@ -5,6 +5,16 @@ import string
 from . import utils
 from Liveroom import settings
 
+def post_file_upload_path(instance, filename):
+    return 'classes/'  + str(instance.classroom.subject)+'_'+str(instance.classroom.id)+'/posts/' + filename
+
+def file_upload_path(instance, filename):
+    return 'classes/'  + str(instance.classroom.subject)+'_'+str(instance.classroom.id)+'/posts/' + filename
+
+
+def class_file_upload_path(instance, filename):
+    return 'classes/'  + str(instance.subject)+'_'+str(instance.id)+'/posters/' + filename
+
 
 class Classroom(models.Model):
     # info
@@ -16,7 +26,7 @@ class Classroom(models.Model):
 #     Class_name = models.OneToOneField(Class,on_delete=models.CASCADE, related_name='class_name', default='class_name')
     # Unique slug
     slug = models.SlugField(max_length=40, blank=True)
-
+    poster = models.ImageField(upload_to=class_file_upload_path,blank=True,null=True)
     # members
     teachers = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, default='teachers', related_name='teachers')
@@ -24,9 +34,7 @@ class Classroom(models.Model):
         CustomUser, blank=True, related_name='students')
 
     # time
-    date = models.DateField(auto_now_add=True)
-    time = models.TimeField(auto_now_add=True)
-
+    created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return str(self.class_name + " " + self.standard + " " + self.subject)
 
@@ -41,8 +49,6 @@ class Classroom(models.Model):
         return super().save(*args, **kwargs)
 
 
-def file_upload_path(instance, filename):
-    return 'class/' + str(instance.user.id) + '/' + str(instance.classroom.subject) + '/' + filename
 
 
 class Post(models.Model):
@@ -52,11 +58,10 @@ class Post(models.Model):
         Classroom, on_delete=models.CASCADE, related_name='classroom')
     file_name = models.CharField(max_length=500, default="")
     text = models.TextField(max_length=500, blank=True)
-    file = models.FileField(upload_to=file_upload_path, blank=True)
+    file = models.FileField(upload_to=post_file_upload_path, blank=True)
 
     # time
-    date = models.DateField(auto_now_add=True)
-    time = models.TimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.text
@@ -71,8 +76,7 @@ class Comment(models.Model):
     text = models.TextField(max_length=500)
 
     # time
-    date = models.DateField(auto_now_add=True)
-    time = models.TimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.text
@@ -83,8 +87,9 @@ class Comment(models.Model):
 class Announcement(models.Model):
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     classroom = models.ForeignKey(
-        Classroom, on_delete=models.CASCADE, null=True, blank=True)
+        Classroom, on_delete=models.CASCADE, null=True, blank=True,related_name='announcements')
     announcement = models.CharField(max_length=300)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return str(self.created_by)

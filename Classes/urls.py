@@ -1,5 +1,4 @@
-from django.urls import path, include
-from django.conf.urls import url
+from django.urls import path, include, re_path
 from rest_framework.routers import DefaultRouter
 from .views import ClassroomView, PostViewSet, CommentViewSet, AnnouncementView
 
@@ -12,6 +11,6 @@ router.register(r'announcement', AnnouncementView, basename='announcement')
 # urlpatterns = router.urls
 
 urlpatterns = [
-    url(r'', include(router.urls)),
+    re_path(r'', include(router.urls)),
 
 ]

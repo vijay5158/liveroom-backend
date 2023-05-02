@@ -15,6 +15,30 @@ class StringSerializer(serializers.StringRelatedField):
         return value
 
 
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    User = UserSerializer()
+    created_at = serializers.DateTimeField()
+
+    class Meta:
+        model = Comment
+        fields = '__all__'
+
+# class CombinedPostSerializer(serializers.ModelSerializer):
+#     comments = serializers.SerializerMethodField()
+    
+#     def get_comments(self, obj):
+#         comments = obj.comment_post.all()
+#         serializer = CommentSerializer(comments, many=True)
+#         return serializer.data
+
+#     class Meta:
+#         model = Post
+#         fields = '__all__'
+
+
+
 class AnnouncementSerializer(serializers.ModelSerializer):
     created_by = StringSerializer(many=False)
 
@@ -35,8 +59,51 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         return ancmnt
 
 
+class PostSerializer(serializers.ModelSerializer):
+    file = serializers.FileField(
+        max_length=None, use_url=True
+    )
+    user = UserSerializer()
+    comments = serializers.SerializerMethodField()
+    
+    def get_comments(self, obj):
+        comments = obj.comment_post.all()
+        serializer = CommentSerializer(comments, many=True)
+        return serializer.data
+    
+    class Meta:
+        model = Post
+        fields = '__all__'
+
+    def get_file_url(self, obj):
+        request = self.context.get('request')
+        file_url = obj.fingerprint.url
+        return request.build_absolute_uri(file_url)
+
+    def post_file_url(self, obj):
+        request = self.context.get('request')
+        file_url = obj.fingerprint.url
+        return request.build_absolute_uri(file_url)
+
+
 class ClassRoomSerializer(serializers.ModelSerializer):
-    teachers = StringSerializer(many=False)
+    # teachers = StringSerializer(many=False)
+    posts = serializers.SerializerMethodField()
+    teachers = serializers.SerializerMethodField()
+    students = serializers.SerializerMethodField()
+
+    def get_posts(self, obj):
+        posts = obj.classroom.all()
+        serializer = PostSerializer(posts, many=True)
+        return serializer.data
+    def get_teachers(self, obj):
+        # posts = obj.classroom.all()
+        serializer = UserSerializer(obj.teachers)
+        return serializer.data
+    def get_students(self, obj):
+        # posts = obj.classroom.all()
+        serializer = UserSerializer(obj.students, many=True)
+        return serializer.data
 
     class Meta:
         model = Classroom
@@ -64,32 +131,25 @@ class ClassRoomSerializer(serializers.ModelSerializer):
         return instance
 
 
-class PostSerializer(serializers.ModelSerializer):
-    file = serializers.FileField(
-        max_length=None, use_url=True
-    )
-    user = UserSerializer()
+# class CombinedClassSerializer(serializers.ModelSerializer):
+#     posts = serializers.SerializerMethodField()
+#     teachers = serializers.SerializerMethodField()
+#     students = serializers.SerializerMethodField()
 
-    class Meta:
-        model = Post
-        fields = '__all__'
-
-    def get_file_url(self, obj):
-        request = self.context.get('request')
-        file_url = obj.fingerprint.url
-        return request.build_absolute_uri(file_url)
-
-    def post_file_url(self, obj):
-        request = self.context.get('request')
-        file_url = obj.fingerprint.url
-        return request.build_absolute_uri(file_url)
-
-
-class CommentSerializer(serializers.ModelSerializer):
-    User = UserSerializer()
-    date = serializers.DateField()
-    time = serializers.TimeField()
-
-    class Meta:
-        model = Comment
-        fields = '__all__'
+#     def get_posts(self, obj):
+#         posts = obj.classroom.all()
+#         serializer = CombinedPostSerializer(posts, many=True)
+#         return serializer.data
+#     def get_teachers(self, obj):
+#         # posts = obj.classroom.all()
+#         serializer = UserSerializer(obj.teachers)
+#         return serializer.data
+#     def get_students(self, obj):
+#         # posts = obj.classroom.all()
+#         serializer = CombinedPostSerializer(obj.students, many=True)
+#         return serializer.data
+    
+#     class Meta:
+#         model = Classroom
+#         fields = '__all__'
+#         lookup_field = 'slug'

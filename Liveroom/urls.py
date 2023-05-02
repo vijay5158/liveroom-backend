@@ -8,11 +8,10 @@ from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', index),
-    path('api-auth/', include('rest_framework.urls')),
-    path('rest-auth/', include('rest_auth.urls')),
-    path('', include('Accounts.urls')),
-    path('class/', include('Classes.urls')),
+    # path('', index),
+    path('', include('rest_framework.urls')),
+    path('api/', include('Accounts.urls')),
+    path('api/class/', include('Classes.urls')),
 
 ] + static(settings.MEDIA_URL,
            document_root=settings.MEDIA_ROOT)

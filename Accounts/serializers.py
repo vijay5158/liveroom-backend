@@ -1,15 +1,10 @@
-from rest_auth.serializers import LoginSerializer
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 
 from .models import Contact, CustomUser
 
 
-class loginSerializer(LoginSerializer):
-    username = None
-
 class RegistrationSerializer(serializers.ModelSerializer):
-    token = serializers.CharField(max_length=400, read_only=True)
     is_student = serializers.BooleanField()
     is_teacher = serializers.BooleanField()
     class Meta:
@@ -31,15 +26,14 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         
         model = CustomUser
-        fields = '__all__'
+        fields = ('name','email','mobile','profile_img','is_student','is_teacher','id', )
 
     def update(self, instance, validated_data):
         if validated_data.get('password') is not None:
             password = validated_data.pop('password', None)
             if password is not None:
                 instance.set_password(password)
-        instance.first_name = validated_data.get('first_name', instance.first_name)
-        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.name = validated_data.get('name', instance.name)
         instance.email = validated_data.get('email', instance.email)
         instance.mobile = validated_data.get('mobile', instance.mobile)
         instance.profile_img = validated_data.get('profile_img', instance.profile_img)
@@ -64,15 +58,13 @@ class TokenSerializer(serializers.ModelSerializer):
         profile_img = serializers.ImageField(max_length=None, use_url=True)
 
         serializer_data = UserSerializer(obj.user).data
-        first_name = serializer_data.get('first_name')
-        last_name = serializer_data.get('last_name')
+        name = serializer_data.get('name')
         mobile = serializer_data.get('mobile')
         profile_img = serializer_data.get('profile_img')
         is_student = serializer_data.get('is_student')
         is_teacher = serializer_data.get('is_teacher')
         return {
-            'first_name': first_name,
-            'last_name': last_name,
+            'name': name,
             'mobile': mobile,
             'profile_img':profile_img,
             'is_student': is_student,
