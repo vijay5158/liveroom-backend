@@ -11,7 +11,7 @@ urlpatterns = [
     # path('', index),
     path('', include('rest_framework.urls')),
     path('api/', include('Accounts.urls')),
-    path('api/class/', include('Classes.urls')),
+    path('api/', include('Classes.urls')),
 
 ] + static(settings.MEDIA_URL,
            document_root=settings.MEDIA_ROOT)

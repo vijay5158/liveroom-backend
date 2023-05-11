@@ -25,19 +25,6 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = '__all__'
 
-# class CombinedPostSerializer(serializers.ModelSerializer):
-#     comments = serializers.SerializerMethodField()
-    
-#     def get_comments(self, obj):
-#         comments = obj.comment_post.all()
-#         serializer = CommentSerializer(comments, many=True)
-#         return serializer.data
-
-#     class Meta:
-#         model = Post
-#         fields = '__all__'
-
-
 
 class AnnouncementSerializer(serializers.ModelSerializer):
     created_by = StringSerializer(many=False)
@@ -64,17 +51,24 @@ class PostSerializer(serializers.ModelSerializer):
         max_length=None, use_url=True
     )
     user = UserSerializer()
-    comments = serializers.SerializerMethodField()
-    
-    def get_comments(self, obj):
-        comments = obj.comment_post.all()
-        serializer = CommentSerializer(comments, many=True)
-        return serializer.data
+    comments = CommentSerializer(many=True)
+
     
     class Meta:
         model = Post
         fields = '__all__'
+    def to_representation(self, instance):
+        # Call the parent class's to_representation method
+        data = super().to_representation(instance)
+        
+        # Reformat the comments as a dictionary, keyed by comment ID
+        comments_dict = {comment['id']: comment for comment in data.pop('comments')}
 
+        # Add the comments to the post data using the comment IDs as keys
+        data['comments'] = comments_dict
+
+        return data
+    
     def get_file_url(self, obj):
         request = self.context.get('request')
         file_url = obj.fingerprint.url
@@ -86,35 +80,24 @@ class PostSerializer(serializers.ModelSerializer):
         return request.build_absolute_uri(file_url)
 
 
-class ClassRoomSerializer(serializers.ModelSerializer):
-    # teachers = StringSerializer(many=False)
-    posts = serializers.SerializerMethodField()
-    teachers = serializers.SerializerMethodField()
-    students = serializers.SerializerMethodField()
 
-    def get_posts(self, obj):
-        posts = obj.classroom.all()
-        serializer = PostSerializer(posts, many=True)
-        return serializer.data
-    def get_teachers(self, obj):
-        # posts = obj.classroom.all()
-        serializer = UserSerializer(obj.teachers)
-        return serializer.data
-    def get_students(self, obj):
-        # posts = obj.classroom.all()
-        serializer = UserSerializer(obj.students, many=True)
-        return serializer.data
+class AllClassRoomSerializer(serializers.ModelSerializer):
+
+    # posts = PostSerializer(many=True)
+    teacher = serializers.CharField(source='teacher.name', read_only=True)
+    # students = UserSerializer(many=True)
 
     class Meta:
         model = Classroom
         fields = ('__all__')
         lookup_field = 'slug'
 
+  
     def create(self, request):
         data = request.data
         classroom = Classroom()
-        teachers = CustomUser.objects.get(email=request.user)
-        classroom.teachers = teachers
+        teacher = CustomUser.objects.get(email=request.user)
+        classroom.teacher = teacher
         classroom.class_name = data['class_name']
         classroom.subject = data['subject']
         classroom.standard = data['standard']
@@ -131,25 +114,29 @@ class ClassRoomSerializer(serializers.ModelSerializer):
         return instance
 
 
-# class CombinedClassSerializer(serializers.ModelSerializer):
-#     posts = serializers.SerializerMethodField()
-#     teachers = serializers.SerializerMethodField()
-#     students = serializers.SerializerMethodField()
 
-#     def get_posts(self, obj):
-#         posts = obj.classroom.all()
-#         serializer = CombinedPostSerializer(posts, many=True)
-#         return serializer.data
-#     def get_teachers(self, obj):
-#         # posts = obj.classroom.all()
-#         serializer = UserSerializer(obj.teachers)
-#         return serializer.data
-#     def get_students(self, obj):
-#         # posts = obj.classroom.all()
-#         serializer = CombinedPostSerializer(obj.students, many=True)
-#         return serializer.data
-    
-#     class Meta:
-#         model = Classroom
-#         fields = '__all__'
-#         lookup_field = 'slug'
+
+class ClassRoomSerializer(serializers.ModelSerializer):
+
+    posts = PostSerializer(many=True)
+    teacher = UserSerializer()
+    students = UserSerializer(many=True)
+    announcements = AnnouncementSerializer(many=True)
+
+    class Meta:
+        model = Classroom
+        fields = ('__all__')
+        lookup_field = 'slug'
+
+    def to_representation(self, instance):
+        # Call the parent class's to_representation method
+        data = super().to_representation(instance)
+
+        # Reformat the posts as a dictionary, keyed by post ID
+        posts_dict = {post['id']: post for post in data.pop('posts')}
+
+
+        data['posts'] = posts_dict
+
+        return data
+

@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 # from rest_framework_simplejwt.authentication import JWTAuthentication
 # Create your views here.
 # from django.shortcuts import render
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, generics
 from rest_framework.parsers import FormParser, MultiPartParser
 # from rest_framework.parsers import JSONParse
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -22,8 +22,8 @@ from rest_framework.status import (HTTP_201_CREATED, HTTP_400_BAD_REQUEST,
 from rest_framework.views import APIView
 
 from .models import Announcement, Classroom, Comment, Post
-from .serializers import (AnnouncementSerializer, ClassRoomSerializer,
-                          CommentSerializer, PostSerializer)
+from .serializers import (AnnouncementSerializer, AllClassRoomSerializer,
+                          CommentSerializer, PostSerializer, ClassRoomSerializer)
 
 # @csrf_exempt
 
@@ -65,8 +65,23 @@ class AnnouncementView(viewsets.ModelViewSet):
         return Response(status=HTTP_400_BAD_REQUEST)
 
 
-class ClassroomView(viewsets.ModelViewSet):
+class ClassroomDataView(viewsets.ModelViewSet):
     serializer_class = ClassRoomSerializer
+    queryset = Classroom.objects.all()
+    lookup_field = 'slug'
+    permission_classes = [IsAuthenticated]
+
+    def get_allowed_methods(self):
+        allowed_methods = super().get_allowed_methods()
+        allowed_methods.remove('PUT')
+        allowed_methods.remove('PATCH')
+        allowed_methods.remove('DELETE')
+        allowed_methods.remove('POST')
+        return allowed_methods    
+
+
+class ClassroomView(viewsets.ModelViewSet):
+    serializer_class = AllClassRoomSerializer
     queryset = Classroom.objects.all()
     lookup_field = 'slug'
     permission_classes = [IsAuthenticated]
@@ -74,10 +89,10 @@ class ClassroomView(viewsets.ModelViewSet):
 
     def partial_update(self, request, slug):
         classroom = Classroom.objects.get(slug=slug)
-        serialized = ClassRoomSerializer(
+        serialized = AllClassRoomSerializer(
             classroom, data=request.data, partial=True)
         if serialized.is_valid():
-            updated_data = ClassRoomSerializer.partial_update(
+            updated_data = AllClassRoomSerializer.partial_update(
                 self, instance=classroom, validated_data=request.data)
             if updated_data.lock == True:
                 error = {"massage": "Classroom is locked"}
@@ -87,18 +102,18 @@ class ClassroomView(viewsets.ModelViewSet):
     def create(self, request):
         if request.user.is_student:
             return Response(status=HTTP_406_NOT_ACCEPTABLE)
-        serializer = ClassRoomSerializer(data=request.data)
+        serializer = AllClassRoomSerializer(data=request.data)
         if serializer.is_valid():
             classroom = serializer.create(request)
             if classroom:
-                serialised_data = ClassRoomSerializer(classroom)
+                serialised_data = AllClassRoomSerializer(classroom)
                 return Response(serialised_data.data, status=HTTP_201_CREATED)
         return Response(status=HTTP_400_BAD_REQUEST)
 
     def list(self, request):
         classes = Classroom.objects.filter(
-            Q(teachers__email=request.user.email) | Q(students__email=request.user.email))
-        serializer = ClassRoomSerializer(classes, many=True)
+            Q(teacher__email=request.user.email) | Q(students__email=request.user.email))
+        serializer = AllClassRoomSerializer(classes, many=True)
         return Response(serializer.data)
 
 

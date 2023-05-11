@@ -28,10 +28,10 @@ class Classroom(models.Model):
     slug = models.SlugField(max_length=40, blank=True)
     poster = models.ImageField(upload_to=class_file_upload_path,blank=True,null=True)
     # members
-    teachers = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, default='teachers', related_name='teachers')
+    teacher = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, null=True,blank=True, related_name='classrooms')
     students = models.ManyToManyField(
-        CustomUser, blank=True, related_name='students')
+        CustomUser, blank=True, related_name='student_classrooms')
 
     # time
     created_at = models.DateTimeField(auto_now_add=True)
@@ -53,9 +53,9 @@ class Classroom(models.Model):
 
 class Post(models.Model):
     user = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, related_name='user')
+        CustomUser, on_delete=models.CASCADE, related_name='posts')
     classroom = models.ForeignKey(
-        Classroom, on_delete=models.CASCADE, related_name='classroom')
+        Classroom, on_delete=models.CASCADE, related_name='posts')
     file_name = models.CharField(max_length=500, default="")
     text = models.TextField(max_length=500, blank=True)
     file = models.FileField(upload_to=post_file_upload_path, blank=True)
@@ -69,9 +69,9 @@ class Post(models.Model):
 
 class Comment(models.Model):
     User = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, related_name='comment_user')
+        CustomUser, on_delete=models.CASCADE, related_name='comments')
     post = models.ForeignKey(
-        Post, on_delete=models.CASCADE, related_name='comment_post')
+        Post, on_delete=models.CASCADE, related_name='comments')
 
     text = models.TextField(max_length=500)
 

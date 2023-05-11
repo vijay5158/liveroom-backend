@@ -104,12 +104,50 @@ ASGI_APPLICATION = "Liveroom.asgi.application"
 #         },
 #     },
 # }
+# ASGI_APPLICATION_OPTIONS = {
+#     "shutdown_timeout": 10,  # Set a higher value (in seconds) for the shutdown timeout
+# }
 
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels_redis.core.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [('redis-14634.c212.ap-south-1-1.ec2.cloud.redislabs.com', 14634,'IlOzuZukL7RzNqbCGXlDZt4w9aPbtlJ8')],
+#             # "password": 'IlOzuZukL7RzNqbCGXlDZt4w9aPbtlJ8',
+#             # "ssl_cert_reqs": None,  # Needed for free Redis Labs SSL/TLS certificate
+#             'expiry': 3600,
+#             'group_expiry': 86400,
+#             'channel_capacity': {
+#                 'http.request': 10,
+#                 'websocket.receive': 10,
+#             },
+#         },
+#         "CHANNEL_OPTIONS": {
+#             "enable_broadcast": True,
+#         },
+#     },
+# }
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer"
     }
 }
+
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_postgres.core.PostgresChannelLayer',
+#         # 'ROUTING': 'Liveroom.asgi.application',
+#         'CONFIG': {
+#             'hosts': ['postgres://pyklltth:T60AuqPico8PAih0LQzq7bxMzxmMccg-@satao.db.elephantsql.com/pyklltth'],
+#             'expiry': 3600,
+#             'group_expiry': 86400,
+#             'channel_capacity': {
+#                 'http.request': 100,
+#                 'websocket.receive': 100,
+#             },
+#         },
+#     },
+# }
 
 
 # Database
