@@ -19,7 +19,7 @@ class CustomUser(AbstractUser):
     profile_img = models.ImageField(upload_to=file_upload_path, blank=True,null=True)
     is_student = models.BooleanField(null=True, blank=True)
     is_teacher = models.BooleanField(null=True, blank=True)
-
+    face_template = models.BinaryField(null=True, blank=True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['mobile', 'name']
 
@@ -27,7 +27,6 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email
-
 
 class Contact(models.Model):
     name = models.CharField(max_length=60)

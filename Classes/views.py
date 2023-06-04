@@ -21,11 +21,12 @@ from rest_framework.status import (HTTP_201_CREATED, HTTP_400_BAD_REQUEST,
                                    HTTP_406_NOT_ACCEPTABLE)
 from rest_framework.views import APIView
 
-from .models import Announcement, Classroom, Comment, Post
+from .models import Announcement, Classroom, Comment, Post, Attendance
 from .serializers import (AnnouncementSerializer, AllClassRoomSerializer,
                           CommentSerializer, PostSerializer, ClassRoomSerializer)
-
 # @csrf_exempt
+from datetime import date
+from Accounts.face_detection import match_face_template
 
 
 class AnnouncementView(viewsets.ModelViewSet):
@@ -89,6 +90,14 @@ class ClassroomView(viewsets.ModelViewSet):
 
     def partial_update(self, request, slug):
         classroom = Classroom.objects.get(slug=slug)
+        if classroom.lock:
+            error = {"massage": "Classroom is locked"}
+            return Response(error, status=HTTP_406_NOT_ACCEPTABLE)
+
+        if classroom.students.count() >= classroom.limit:
+            error = {"massage": "Classroom is full!"}
+            return Response(error, status=HTTP_406_NOT_ACCEPTABLE)
+
         serialized = AllClassRoomSerializer(
             classroom, data=request.data, partial=True)
         if serialized.is_valid():
@@ -203,3 +212,43 @@ class CommentViewSet(viewsets.ModelViewSet):
 
             return Response(serializer.data, status=HTTP_201_CREATED)
         return Response(status=HTTP_400_BAD_REQUEST)
+
+
+class AttendanceAPIView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def post(self,request):
+        user = request.user
+
+        if not user:
+            return Response({'success':False,'msg':'User does not present!'},202)
+
+        if user.is_teacher:
+            return Response({'success':False,'msg':'You are a teacher, can not mark attendance'},202)
+
+        if not user.profile_img or not user.face_template:
+            return Response({'success':False,'msg':'Cant mark attendance, Please update your profile pic!'},202)
+
+        data = request.data
+        files = request.FILES
+        if not data or not 'class' in data or not files or not 'avatar' in files:
+            return Response({'success':False,'msg':'Data Required!'},202)
+
+        classroom = Classroom.objects.filter(id=data.get('class'),students__in=[user]).first()
+        if not classroom:
+            return Response({'success':False,'msg':'Classroom does not exist!'},202)
+        print(files.get('avatar'))        
+        matched = match_face_template(files.get('avatar'),user.face_template)
+        print(matched)
+        if not matched:
+            return Response({'success':False,'msg':'Face not matched!'},202)
+
+        today = date.today()
+        attendance = classroom.attendances.filter(date=today).first()
+        if not attendance:
+            attendance = Attendance(classroom=classroom)
+            attendance.save()
+
+        attendance.students.add(user)
+        return Response({'success':False,'msg':'Attendance marked!'},202)
+

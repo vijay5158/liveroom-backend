@@ -11,7 +11,18 @@ from .tokens import create_jwt_pair_for_user
 from .models import CustomUser
 from .serializers import (ContactSerializer, RegistrationSerializer,
                           UserSerializer)
+from .face_detection import get_face_template
 
+
+class GetTemplate(APIView):
+    permission_classes=[AllowAny]
+
+    def post(self,request):
+        data = request.data
+        files = request.FILES
+        face_template = get_face_template(files.get('face'))
+        print(face_template)
+        return Response('success',202)
 
 class ContactView(APIView):
     permission_classes = [AllowAny]
@@ -45,6 +56,19 @@ class UserViewSet(viewsets.ViewSet):
         user = request.user
 
         if user:
+            files = request.FILES
+            if 'avatar' in files:
+                avatar = files.get('avatar')
+                user.profile_img=avatar
+                try:
+                    face_template = get_face_template(avatar)
+                    # print(face_template)
+                    user.face_template = face_template
+                except Exception as e:
+                    print('error',e)
+                    pass
+                user.save()
+            
             serialized = UserSerializer(
             user, data=request.data, partial=True)
             if serialized.is_valid():
@@ -61,14 +85,32 @@ class RegistrationAPIView(APIView):
 
 
     def post(self, request, format='json'):
-        serializer = RegistrationSerializer(data=request.data)
+        data = request.data.copy()
+        if data["is_student"]=='true' or data["is_student"]=='True':
+            data["is_student"]=True            
+            data["is_teacher"]=False
+        elif data["is_teacher"]=='true' or data["is_teacher"]=='True':
+            data["is_student"]=False            
+            data["is_teacher"]=True
+        serializer = RegistrationSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
             user = serializer.save()
+            # files = request.FILES
+            # if 'avatar' in files:
+            #     avatar = files.get('avatar')
+            #     try:
+            #         face_template = get_face_template(avatar)
+            #         # print(face_template)
+            #         user.face_template = face_template
+            #         user.save()
+            #     except Exception as e:
+            #         print('error',e)
+            #         pass
 
             if user:
                 login(request,user)
                 tokens = create_jwt_pair_for_user(user)
-                print(tokens)
+                # print(tokens)
                 json = serializer.data
                 # json["tokens"] = str(tokens)
                 data = {

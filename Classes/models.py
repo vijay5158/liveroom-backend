@@ -23,6 +23,7 @@ class Classroom(models.Model):
     subject = models.CharField(max_length=50)
     standard = models.CharField(max_length=30)
     lock = models.BooleanField(default=False, null=True, blank=True)
+    isVideo = models.BooleanField(default=False, null=True, blank=True)
 #     Class_name = models.OneToOneField(Class,on_delete=models.CASCADE, related_name='class_name', default='class_name')
     # Unique slug
     slug = models.SlugField(max_length=40, blank=True)
@@ -32,6 +33,7 @@ class Classroom(models.Model):
         CustomUser, on_delete=models.CASCADE, null=True,blank=True, related_name='classrooms')
     students = models.ManyToManyField(
         CustomUser, blank=True, related_name='student_classrooms')
+    limit = models.IntegerField(default=60)
 
     # time
     created_at = models.DateTimeField(auto_now_add=True)
@@ -48,6 +50,11 @@ class Classroom(models.Model):
             self.slug = ran
         return super().save(*args, **kwargs)
 
+class Attendance(models.Model):
+
+    students = models.ManyToManyField(CustomUser, blank=True, related_name='attendances')
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, null=True,blank=True, related_name='attendances')
+    date = models.DateField(auto_now_add=True)    
 
 
 
