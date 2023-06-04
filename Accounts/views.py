@@ -13,17 +13,6 @@ from .serializers import (ContactSerializer, RegistrationSerializer,
                           UserSerializer)
 from .face_detection import get_face_template
 
-
-class GetTemplate(APIView):
-    permission_classes=[AllowAny]
-
-    def post(self,request):
-        data = request.data
-        files = request.FILES
-        face_template = get_face_template(files.get('face'))
-        print(face_template)
-        return Response('success',202)
-
 class ContactView(APIView):
     permission_classes = [AllowAny]
     def post(self, request, format='json'):

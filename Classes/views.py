@@ -237,9 +237,7 @@ class AttendanceAPIView(APIView):
         classroom = Classroom.objects.filter(id=data.get('class'),students__in=[user]).first()
         if not classroom:
             return Response({'success':False,'msg':'Classroom does not exist!'},202)
-        print(files.get('avatar'))        
         matched = match_face_template(files.get('avatar'),user.face_template)
-        print(matched)
         if not matched:
             return Response({'success':False,'msg':'Face not matched!'},202)
 

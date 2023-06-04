@@ -8,7 +8,6 @@ from rest_framework.authtoken.models import Token
 def get_user(token_key):
     try:
         token = Token.objects.get(key=token_key)
-        print(token.user)
         return token.user
     except Token.DoesNotExist:
         return AnonymousUser()
