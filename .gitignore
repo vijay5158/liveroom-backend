@@ -8,7 +8,7 @@ __pycache__/
 
 # C extensions
 *.so
-liveroom5158-firebase-adminsdk-6wxsh-3f433c1a44.json
+liveroom-5158-firebase-adminsdk-qizec-405db0aecb.json
 # Distribution / packaging
 .Python
 build/
@@ -59,7 +59,7 @@ cover/
 # Translations
 *.mo
 *.pot
-
+/assets
 # Django stuff:
 *.log
 local_settings.py

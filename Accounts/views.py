@@ -12,6 +12,8 @@ from .models import CustomUser
 from .serializers import (ContactSerializer, RegistrationSerializer,
                           UserSerializer)
 from .face_detection import get_face_template
+from .helper import compress_and_resize, generate_unique_filename
+from django.core.files.base import ContentFile
 
 class ContactView(APIView):
     permission_classes = [AllowAny]
@@ -48,9 +50,11 @@ class UserViewSet(viewsets.ViewSet):
             files = request.FILES
             if 'avatar' in files:
                 avatar = files.get('avatar')
-                user.profile_img=avatar
+                compressed_avatar = compress_and_resize(avatar)
+                newFile = ContentFile(compressed_avatar, name=generate_unique_filename(avatar.name))
+                user.profile_img = newFile
                 try:
-                    face_template = get_face_template(avatar)
+                    face_template = get_face_template(newFile)
                     # print(face_template)
                     user.face_template = face_template
                 except Exception as e:

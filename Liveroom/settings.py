@@ -248,12 +248,15 @@ ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 # Google cloud settings
 GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
-    os.path.join(BASE_DIR, 'liveroom5158-firebase-adminsdk-6wxsh-3f433c1a44.json')
+    os.path.join(BASE_DIR, 'liveroom-5158-firebase-adminsdk-qizec-405db0aecb.json')
 )
-GS_BUCKET_NAME = 'liveroom5158.appspot.com'
+GS_BUCKET_NAME = 'liveroom-5158.appspot.com'
 # if not DEBUG:
 DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
-    
+
+# STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
