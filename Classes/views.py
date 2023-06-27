@@ -136,14 +136,21 @@ class PostViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         data = request.data
         user = request.user
-        classroom = Classroom.objects.get(id=data['classroom'])
-        file = data['file']
-        text = data['text']
+        files = request.FILES
+        classId = data.get('classroom',None)
+        file_name = data.get('file_name',None)
+        text = data.get('text',None)
+        if not data or not text or not classId:
+            return Response({"message":"Data required!"},status=HTTP_400_BAD_REQUEST)
         channel_layer = channels.layers.get_channel_layer()
+        classroom = Classroom.objects.get(id=classId)
         slug = classroom.slug
-        file_name = data['file_name']
-        post = Post.objects.create(
-            user=user, classroom=classroom, text=text, file=file, file_name=file_name)
+        file = files.get('file',None)
+        if file and file_name:
+            post = Post.objects.create(user=user, classroom=classroom, text=text, file=file, file_name=file_name)
+        else:
+            post = Post.objects.create(user=user, classroom=classroom, text=text)
+
         serializer = PostSerializer(post, context={"request": request})
 
         if serializer:
@@ -154,7 +161,6 @@ class PostViewSet(viewsets.ModelViewSet):
                     'post': serializer.data
                 }
             )
-
             return Response(serializer.data, status=HTTP_201_CREATED)
 
         return Response(status=HTTP_400_BAD_REQUEST)
