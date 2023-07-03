@@ -23,25 +23,38 @@ from rest_framework.views import APIView
 
 from .models import Announcement, Classroom, Comment, Post, Attendance
 from .serializers import (AnnouncementSerializer, AllClassRoomSerializer,
-                          CommentSerializer, PostSerializer, ClassRoomSerializer)
+                          CommentSerializer, PostSerializer, ClassRoomSerializer, AttendanceSerializer)
 # @csrf_exempt
 from datetime import date
 from Accounts.face_detection import match_face_template
+from .permissions import IsRoleStudent, IsRoleTeacher
+from rest_framework.pagination import LimitOffsetPagination
+from .pagination import PaginationHandlerMixin
+from rest_framework.generics import ListAPIView
+from django.utils import timezone
+from datetime import timedelta, datetime
 
+class Pagination(LimitOffsetPagination):
+    default_limit = 10  # The default number of items per page
+    max_limit = 100
 
 class AnnouncementView(viewsets.ModelViewSet):
     serializer_class = AnnouncementSerializer
     queryset = Announcement.objects.all()
     # lookup_field = 'classroom_id'
     permission_classes = [IsAuthenticated]
+    pagination_class = Pagination
     # permission_classes = [AllowAny]
 
     def retrieve(self, request, pk=None):
 
         queryset = Announcement.objects.filter(classroom__slug=pk)
-        serializer = AnnouncementSerializer(queryset, many=True)
-        data = serializer.data
-        return Response(data, status=status.HTTP_202_ACCEPTED)
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+        
+        # Serialize the paginated queryset
+        serializer = self.get_serializer(paginated_queryset, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     def create(self, request):
         if request.user.is_student:
@@ -86,6 +99,7 @@ class ClassroomView(viewsets.ModelViewSet):
     queryset = Classroom.objects.all()
     lookup_field = 'slug'
     permission_classes = [IsAuthenticated]
+    pagination_class = Pagination
     # permission_classes = [AllowAny]
 
     def partial_update(self, request, slug):
@@ -121,9 +135,13 @@ class ClassroomView(viewsets.ModelViewSet):
 
     def list(self, request):
         classes = Classroom.objects.filter(
-            Q(teacher__email=request.user.email) | Q(students__email=request.user.email))
-        serializer = AllClassRoomSerializer(classes, many=True)
-        return Response(serializer.data)
+            Q(teacher=request.user) | Q(students=request.user))
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(classes, request)
+        
+        # Serialize the paginated queryset
+        serializer = self.get_serializer(paginated_queryset, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -131,6 +149,7 @@ class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+    pagination_class = Pagination
     # permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
@@ -140,51 +159,68 @@ class PostViewSet(viewsets.ModelViewSet):
         classId = data.get('classroom',None)
         file_name = data.get('file_name',None)
         text = data.get('text',None)
-        if not data or not text or not classId:
-            return Response({"message":"Data required!"},status=HTTP_400_BAD_REQUEST)
-        channel_layer = channels.layers.get_channel_layer()
-        classroom = Classroom.objects.get(id=classId)
-        slug = classroom.slug
-        file = files.get('file',None)
-        if file and file_name:
-            post = Post.objects.create(user=user, classroom=classroom, text=text, file=file, file_name=file_name)
-        else:
-            post = Post.objects.create(user=user, classroom=classroom, text=text)
+        try:
+            classroom = Classroom.objects.get(id=classId,teacher=request.user)
+            
+            if not data or not text or not classId:
+                return Response({"message":"Data required!"},status=HTTP_400_BAD_REQUEST)
+            channel_layer = channels.layers.get_channel_layer()
+            slug = classroom.slug
+            file = files.get('file',None)
+            if file and file_name:
+                post = Post.objects.create(user=user, classroom=classroom, text=text, file=file, file_name=file_name)
+            else:
+                post = Post.objects.create(user=user, classroom=classroom, text=text)
 
-        serializer = PostSerializer(post, context={"request": request})
+            serializer = PostSerializer(post, context={"request": request})
 
-        if serializer:
-            async_to_sync(channel_layer.group_send)(
-                'class_'+slug,
-                {
-                    'type': 'post_message',
-                    'post': serializer.data
-                }
-            )
-            return Response(serializer.data, status=HTTP_201_CREATED)
+            if serializer:
+                async_to_sync(channel_layer.group_send)(
+                    'class_'+slug,
+                    {
+                        'type': 'post_message',
+                        'post': serializer.data
+                    }
+                )
+                return Response(serializer.data, status=HTTP_201_CREATED)
+        except Classroom.DoesNotExist:
+            return Response(status=HTTP_400_BAD_REQUEST)
 
         return Response(status=HTTP_400_BAD_REQUEST)
     # @xframe_options_exempt
 
     def list(self, request):
-        queryset = Post.objects.all().order_by('-date', '-time')
+        # queryset = Post.objects.().order_by('-created_at')
 
         slug = request.query_params.get('slug')
         if slug is not None:
-            queryset = queryset.filter(classroom__slug=slug)
-            serializer = PostSerializer(
-                queryset, context={"request": request}, many=True)
-            return Response(serializer.data)
+            queryset = Post.objects.filter(Q(classroom__slug=slug) & Q(classroom__teacher=request.user) | Q(classroom__students=request.user)).order_by('-created_at')
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(queryset, request)
+            
+            # Serialize the paginated queryset
+            serializer = self.get_serializer(paginated_queryset, context={"request": request}, many=True)
+            post_data = serializer.data
+            posts_dict = {post['id']: post for post in post_data}
+            return paginator.get_paginated_response(posts_dict)
+
+            # serializer = PostSerializer(
+            #     queryset, context={"request": request}, many=True)
+            
+            # return Response(serializer.data)
+        
+        return Response([])
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    queryset = Comment.objects.all()
+    queryset = Comment.objects.order_by('-created_at').all()
     permission_classes = [IsAuthenticated]
+    pagination_class = Pagination
     # permission_classes = [AllowAny]
 
     def list(self, request):
-        queryset = Comment.objects.all()
+        queryset = Comment.objects.order_by('-created_at').all()
         slug = request.query_params.get('slug')
         if slug is not None:
             classroom = Classroom.objects.get(slug=slug)
@@ -221,7 +257,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class AttendanceAPIView(APIView):
-    permission_classes=[IsAuthenticated]
+    permission_classes=[IsAuthenticated, IsRoleStudent]
 
     def post(self,request):
         user = request.user
@@ -256,3 +292,34 @@ class AttendanceAPIView(APIView):
         attendance.students.add(user)
         return Response({'success':False,'msg':'Attendance marked!'},202)
 
+class ListAttendance(ListAPIView, PaginationHandlerMixin):
+    permission_classes = [IsAuthenticated, IsRoleTeacher]
+    # pagination_class = Pagination
+    serializer_class = AttendanceSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        current_date = timezone.now()
+        seven_days_ago = current_date - timedelta(days=7)
+        class_id = self.request.query_params.get('class_id')
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        if not class_id:
+            return None
+        
+        queryset = Attendance.objects.filter(classroom_id=class_id, classroom__teacher=user).order_by('-date')
+
+        if start_date and end_date:
+            try:
+                start_date_seconds = int(start_date) // 1000
+                start_datetime = datetime.fromtimestamp(start_date_seconds)
+                end_date_seconds = int(end_date) // 1000
+                end_datetime = datetime.fromtimestamp(end_date_seconds)
+                queryset = queryset.filter(created_on__gte=start_datetime, created_on__lte=end_datetime)
+            except:
+                return None
+        else:
+            queryset = queryset.filter(created_on__gte=seven_days_ago, created_on__lte=current_date)
+
+        return queryset
+        

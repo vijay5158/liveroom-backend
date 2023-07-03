@@ -27,7 +27,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class AnnouncementSerializer(serializers.ModelSerializer):
-    created_by = StringSerializer(many=False)
+    created_by = serializers.CharField(source='created_by.name', read_only=True)
 
     class Meta:
         model = Announcement
@@ -53,10 +53,11 @@ class PostSerializer(serializers.ModelSerializer):
     user = UserSerializer()
     comments = CommentSerializer(many=True)
 
-    
     class Meta:
         model = Post
         fields = '__all__'
+
+
     def to_representation(self, instance):
         # Call the parent class's to_representation method
         data = super().to_representation(instance)
@@ -118,25 +119,58 @@ class AllClassRoomSerializer(serializers.ModelSerializer):
 
 class ClassRoomSerializer(serializers.ModelSerializer):
 
-    posts = PostSerializer(many=True)
+    # posts = PostSerializer(many=True)
     teacher = UserSerializer()
     students = UserSerializer(many=True)
-    announcements = AnnouncementSerializer(many=True)
+    # announcements = AnnouncementSerializer(many=True)
 
     class Meta:
         model = Classroom
         fields = ('__all__')
         lookup_field = 'slug'
 
-    def to_representation(self, instance):
-        # Call the parent class's to_representation method
-        data = super().to_representation(instance)
+    # def to_representation(self, instance):
+    #     # Call the parent class's to_representation method
+    #     data = super().to_representation(instance)
 
-        # Reformat the posts as a dictionary, keyed by post ID
-        posts_dict = {post['id']: post for post in data.pop('posts')}
+    #     # Reformat the posts as a dictionary, keyed by post ID
+    #     posts_dict = {post['id']: post for post in data.pop('posts')}
 
 
-        data['posts'] = posts_dict
+    #     data['posts'] = posts_dict
 
-        return data
+    #     return data
 
+class AttendanceSerializer(serializers.ModelSerializer):
+    students = serializers.CharField(source='students.name', read_only=True)
+
+    class Meta:
+        model = Attendance
+        fields = ('__all__')
+    
+class AssignmentSubmissionSerializer(serializers.ModelSerializer):
+    file = serializers.FileField(
+        max_length=None, use_url=True
+    )
+    created_by = serializers.CharField(source='created_by.name', read_only=True)
+
+    class Meta:
+        model = AssignmentSubmission
+        fields = '__all__'
+    
+    def get_file_url(self, obj):
+        request = self.context.get('request')
+        file_url = obj.fingerprint.url
+        return request.build_absolute_uri(file_url)
+
+    def post_file_url(self, obj):
+        request = self.context.get('request')
+        file_url = obj.fingerprint.url
+        return request.build_absolute_uri(file_url)
+
+class AssignmentSerializer(serializers.ModelSerializer):
+    submissions = AssignmentSubmissionSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = Assignment
+        fields = '__all__'

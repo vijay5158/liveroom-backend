@@ -4,9 +4,20 @@ import random
 import string
 from . import utils
 from Liveroom import settings
+import uuid
+from django.utils import timezone
+from django.core.validators import MaxValueValidator, MinValueValidator
+
+def generate_unique_id():
+    return uuid.uuid4()
+
 
 def post_file_upload_path(instance, filename):
     return 'classes/'  + str(instance.classroom.subject)+'_'+str(instance.classroom.id)+'/posts/' + filename
+
+def assign_file_upload_path(instance, filename):
+    return 'classes/'  + str(instance.classroom.subject)+'_'+str(instance.classroom.id)+'/assignments/' + filename
+
 
 def file_upload_path(instance, filename):
     return 'classes/'  + str(instance.classroom.subject)+'_'+str(instance.classroom.id)+'/posts/' + filename
@@ -92,11 +103,39 @@ class Comment(models.Model):
 
 
 class Announcement(models.Model):
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     classroom = models.ForeignKey(
         Classroom, on_delete=models.CASCADE, null=True, blank=True,related_name='announcements')
     announcement = models.CharField(max_length=300)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return str(self.created_by)
+
+class Assignment(models.Model):
+    
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='assignments')
+    classroom = models.ForeignKey(
+        Classroom, on_delete=models.CASCADE, null=True, blank=True,related_name='assignments')
+    assignment = models.TextField(null=True)
+    start_date = models.DateTimeField(null=True, blank=True,default=timezone.now)
+    end_date = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return str(self.created_by)
+
+class AssignmentSubmission(models.Model):
+
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='submissions')
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='submissions')
+    file = models.FileField(upload_to=assign_file_upload_path, blank=True)
+    score = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return str(self.created_by)
