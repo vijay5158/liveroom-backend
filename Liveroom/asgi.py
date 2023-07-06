@@ -17,29 +17,29 @@ from channels.security.websocket import AllowedHostsOriginValidator
 from Classes.routing import websocket_urlpatterns
 from django.core.asgi import get_asgi_application
 
-from .middleware import TokenAuthMiddleware
+from .middleware import WebSocketAuthMiddleware,TokenAuthMiddlewareStack
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Liveroom.settings')
 django.setup()
 
 
-# application = ProtocolTypeRouter({
-#     "http": get_asgi_application(),
-#     "websocket": AllowedHostsOriginValidator(
-#         TokenAuthMiddleware(
-#             URLRouter(
-#                 websocket_urlpatterns
-#             )
-#         )
-#     )
-# })
-
-
 application = ProtocolTypeRouter({
-  "http": get_asgi_application(),
-  "websocket": AuthMiddlewareStack(
-        URLRouter(
-            websocket_urlpatterns
+    "http": get_asgi_application(),
+    "websocket": AllowedHostsOriginValidator(
+        TokenAuthMiddlewareStack(
+            URLRouter(
+                websocket_urlpatterns
+            )
         )
-    ),
+    )
 })
+
+
+# application = ProtocolTypeRouter({
+#   "http": get_asgi_application(),
+#   "websocket": AuthMiddlewareStack(
+#         URLRouter(
+#             websocket_urlpatterns
+#         )
+#     ),
+# })

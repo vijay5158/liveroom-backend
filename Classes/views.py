@@ -194,7 +194,7 @@ class PostViewSet(viewsets.ModelViewSet):
 
         slug = request.query_params.get('slug')
         if slug is not None:
-            queryset = Post.objects.filter(Q(classroom__slug=slug) & Q(classroom__teacher=request.user) | Q(classroom__students=request.user)).order_by('-created_at')
+            queryset = Post.objects.filter(classroom__slug=slug).filter(Q(classroom__teacher=request.user) | Q(classroom__students=request.user)).order_by('-created_at')
             paginator = self.pagination_class()
             paginated_queryset = paginator.paginate_queryset(queryset, request)
             

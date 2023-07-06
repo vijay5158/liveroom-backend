@@ -1,10 +1,10 @@
+from uuid import uuid4
 from PIL import Image
 import io
 
 
-def compress_and_resize(image, size_limit=100, ratio='1:1'):
+def compress_and_resize(image, size_limit=200, ratio='1:1'):
     # Open the image using Pillow
-
     img = Image.open(image)
     img = img.convert("RGB")
     # Set the compression quality
@@ -22,7 +22,7 @@ def compress_and_resize(image, size_limit=100, ratio='1:1'):
         raise ValueError('Invalid aspect ratio')
 
     # Resize the image to the target dimensions
-    img = img.resize((200, 200), Image.ANTIALIAS)
+    img = img.resize((target_width, target_height), Image.ANTIALIAS)
     # Create a buffer to store the compressed image
     buffer = io.BytesIO()
 
@@ -31,8 +31,9 @@ def compress_and_resize(image, size_limit=100, ratio='1:1'):
     # Determine the file size of the compressed image
     file_size = buffer.tell()
     # If the file size is larger than the size limit, reduce the compression quality and try again
-    while file_size > size_limit * 1000 and quality>=20:
-        quality -= 20
+    while file_size > size_limit * 1000 and quality>=50:
+        print(file_size)
+        quality -= 10
         buffer = io.BytesIO()
         img.save(buffer, format='JPEG', quality=quality, optimize=True)
         file_size = buffer.tell()
@@ -43,7 +44,6 @@ def compress_and_resize(image, size_limit=100, ratio='1:1'):
     # Return the compressed image as a byte string
     return buffer.getvalue()
 
-from uuid import uuid4
 
 def generate_unique_filename(filename):
     unique_name = uuid4().hex

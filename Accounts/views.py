@@ -51,17 +51,20 @@ class UserViewSet(viewsets.ViewSet):
             files = request.FILES
             if 'avatar' in files:
                 avatar = files.get('avatar')
-                compressed_avatar = compress_and_resize(avatar)
-                newFile = ContentFile(compressed_avatar, name=generate_unique_filename(avatar.name))
-                user.profile_img = newFile
                 try:
-                    face_template = get_face_template(newFile)
-                    # print(face_template)
-                    user.face_template = face_template
-                except Exception as e:
-                    print('error',e)
+                    compressed_avatar = compress_and_resize(avatar)
+                    newFile = ContentFile(compressed_avatar, name=generate_unique_filename(avatar.name))
+                    user.profile_img = newFile
+                    try:
+                        face_template = get_face_template(newFile)
+                        # print(face_template)
+                        user.face_template = face_template
+                    except Exception as e:
+                        print('error',e)
+                        pass
+                    user.save()
+                except:
                     pass
-                user.save()
             
             serialized = UserSerializer(
             user, data=request.data, partial=True)
