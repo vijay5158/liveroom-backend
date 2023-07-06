@@ -1,7 +1,6 @@
 import json
 from asgiref.sync import async_to_sync, sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 class LiveRoomConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -89,7 +88,6 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
         message_type = data.get('type')
-        print(data)
         if message_type == 'offer':
             # Handle SDP offer and send it to the appropriate participant(s)
             await self.handle_offer(data)
