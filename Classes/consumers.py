@@ -57,6 +57,11 @@ class LiveRoomConsumer(AsyncWebsocketConsumer):
             'announcement': announcement
         }))
 
+    async def assignment_message(self,event):
+        assignment = event['assignment']
+        await self.send(text_data=json.dumps({
+            'assignment': assignment
+        }))
 
 
 class VideoRoomConsumer(AsyncWebsocketConsumer):
