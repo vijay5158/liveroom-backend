@@ -108,6 +108,7 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
         # Get the participant's room name and send the offer to that room
         participant_room = data['class_name']
         id = self.scope['user'].id
+        for_user = data['for_user']
 
         await self.channel_layer.group_send(
             'video_%s' % participant_room,
@@ -115,6 +116,7 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
                 'type': 'send_offer',
                 'id': id,
                 'offer': data['sdp'],
+                'for_user': for_user,
                 'participant_channel': self.channel_name
             }
         )
@@ -125,11 +127,13 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
 
         participant_room = data['class_name']
         id = self.scope['user'].id
+        for_user = data['for_user']
         await self.channel_layer.group_send(
             'video_%s' % participant_room,
             {
                 'type': 'send_answer',
                 'id': id,
+                'for_user': for_user,
                 'answer': data['sdp'],
                 'participant_channel': self.channel_name
             }
@@ -141,13 +145,14 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
         participant_room = data['class_name']
         id = self.scope['user'].id
         candidate = data['sdp']
-        print(candidate)
+        for_user = data['for_user']
         await self.channel_layer.group_send(
             'video_%s' % participant_room,
             {
                 'type': 'send_ice_candidate',
                 'candidate': candidate,
                 'id': id,
+                'for_user': for_user,
                 'participant_channel': self.channel_name
             }
         )
@@ -189,6 +194,7 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'type': 'offer',
             'id': event['id'],
+            'for_user': event['for_user'],
             'sdp': event['offer']
         }))
 
@@ -197,6 +203,7 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'type': 'answer',
             'id': event['id'],
+            'for_user': event['for_user'],
             'sdp': event['answer']
         }))
 
@@ -205,6 +212,7 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'type': 'ice_candidate',
             'id': event['id'],
+            'for_user': event['for_user'],
             'candidate': event['candidate']
         }))
 

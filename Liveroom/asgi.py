@@ -18,10 +18,10 @@ from channels.security.websocket import AllowedHostsOriginValidator
 from Classes.routing import websocket_urlpatterns
 from django.core.asgi import get_asgi_application
 
-from .middleware import WebSocketAuthMiddleware,TokenAuthMiddlewareStack
 
 django.setup()
 
+from .middleware import WebSocketAuthMiddleware,TokenAuthMiddlewareStack
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),

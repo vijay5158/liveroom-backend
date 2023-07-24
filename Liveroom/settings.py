@@ -153,6 +153,8 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = True
 CSRF_TRUSTED_ORIGINS = ['https://api.paathshaala.me']
 
+
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -266,3 +268,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 X_FRAME_OPTIONS = 'ALLOWALL'
 
 XS_SHARING_ALLOWED_METHODS = ['POST', 'GET', 'OPTIONS', 'PUT', 'DELETE']
+
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
+FILE_ALLOWED_EXTENSIONS = set(['pdf', 'docx', 'xlsx','mp3', 'mkv', 'mp4', 'ppt','pptx', 'odp', 'doc', 'png', 'jpeg', 'jpg'])

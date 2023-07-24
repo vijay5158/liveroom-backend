@@ -22,6 +22,13 @@ class RegistrationSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+class PublicUserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        
+        model = CustomUser
+        fields = ('name','email','profile_img','is_student','is_teacher', )
+
 
 class UserSerializer(serializers.ModelSerializer):
 

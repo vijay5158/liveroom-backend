@@ -18,6 +18,9 @@ def post_file_upload_path(instance, filename):
 def assign_file_upload_path(instance, filename):
     return 'classes/'  + str(instance.classroom.subject)+'_'+str(instance.classroom.id)+'/assignments/' + filename
 
+def assign_sub_file_upload_path(instance, filename):
+    return 'classes/'  + str(instance.assignment.id)+'/assignments_sub/' + filename
+
 
 def file_upload_path(instance, filename):
     return 'classes/'  + str(instance.classroom.subject)+'_'+str(instance.classroom.id)+'/posts/' + filename
@@ -116,9 +119,11 @@ class Announcement(models.Model):
 
 class Assignment(models.Model):
     
+    title = models.CharField(max_length=500, default="")
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='assignments')
     classroom = models.ForeignKey(
         Classroom, on_delete=models.CASCADE, null=True, blank=True,related_name='assignments')
+    file = models.FileField(upload_to=assign_file_upload_path, blank=True, null=True)
     assignment = models.TextField(null=True)
     start_date = models.DateTimeField(null=True, blank=True,default=timezone.now)
     end_date = models.DateTimeField(null=True, blank=True)
@@ -132,8 +137,9 @@ class AssignmentSubmission(models.Model):
 
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='submissions')
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='submissions')
-    file = models.FileField(upload_to=assign_file_upload_path, blank=True)
-    score = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    file = models.FileField(upload_to=assign_sub_file_upload_path, blank=True)
+    score = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    remarks = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

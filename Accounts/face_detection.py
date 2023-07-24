@@ -1,7 +1,6 @@
 # Import necessary libraries
 import cv2
 import numpy as np
-import base64
 import os
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -81,7 +80,7 @@ def match_face_template(face_image,stored_template):
         stored_template = np.frombuffer(stored_template, np.float32)
         similarity = np.dot(np.array(face_template.flatten()), np.array(stored_template.flatten()))
 
-        return similarity>=0.7
+        return similarity>=0.5
 
     return None
 
