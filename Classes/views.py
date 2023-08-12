@@ -401,7 +401,7 @@ class GetAssignmentAPIView(APIView):
                 # if assignments:
                 serializer = AssignmentStudentSerializer(assignments, context={"request": request}, many=True)
                 return Response({"data":serializer.data, "success": True}, status=status.HTTP_200_OK)
-                return Response({"message":"Assignments not found!", "success": False}, status=status.HTTP_400_BAD_REQUEST)
+                # return Response({"message":"Assignments not found!", "success": False}, status=status.HTTP_400_BAD_REQUEST)
             return Response({"success":False, "message":"Classroom doesn't exist!"}, status=status.HTTP_400_BAD_REQUEST)        
 
         except:
