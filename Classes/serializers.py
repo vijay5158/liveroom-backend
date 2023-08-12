@@ -1,5 +1,5 @@
 from Accounts.models import CustomUser
-from Accounts.serializers import UserSerializer
+from Accounts.serializers import UserSerializer, PublicUserSerializer
 from django.db.models import fields
 from rest_framework import serializers
 from rest_framework.response import Response
@@ -18,7 +18,7 @@ class StringSerializer(serializers.StringRelatedField):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    User = UserSerializer()
+    User = PublicUserSerializer()
     created_at = serializers.DateTimeField()
 
     class Meta:
@@ -36,21 +36,25 @@ class AnnouncementSerializer(serializers.ModelSerializer):
 
     def create(self, request):
         data = request.data
-        ancmnt = Announcement()
-        created_by = CustomUser.objects.get(email=request.user)
-        ancmnt.created_by = created_by
-        ancmnt.announcement = data['announcement']
-        ancmnt.classroom = Classroom.objects.get(id=data['classroom'])
-        ancmnt.save()
+        try:
+            ancmnt = Announcement()
+            # created_by = CustomUser.objects.get(email=request.user)
+            ancmnt.created_by = request.user
+            ancmnt.announcement = data['announcement']
+            ancmnt.classroom = Classroom.objects.get(id=data['classroom'],teacher=request.user)
+            ancmnt.save()
 
-        return ancmnt
+            return ancmnt
+        except Exception as e:
+            print(e)
+            return None
 
 
 class PostSerializer(serializers.ModelSerializer):
     file = serializers.FileField(
         max_length=None, use_url=True
     )
-    user = UserSerializer()
+    user = PublicUserSerializer()
     comments = CommentSerializer(many=True)
 
     class Meta:
@@ -170,7 +174,63 @@ class AssignmentSubmissionSerializer(serializers.ModelSerializer):
 
 class AssignmentSerializer(serializers.ModelSerializer):
     submissions = AssignmentSubmissionSerializer(read_only=True, many=True)
+    file = serializers.FileField(
+        max_length=None, use_url=True
+    )
+    creator = serializers.ReadOnlyField(source='created_by.name')
+    
 
     class Meta:
         model = Assignment
+        fields = ("updated_at", "created_at", "id", "end_date", "start_date", "assignment", "file", "title", "creator", "submissions",)
+
+    def get_file_url(self, obj):
+        request = self.context.get('request')
+        file_url = obj.fingerprint.url
+        return request.build_absolute_uri(file_url)
+
+    def post_file_url(self, obj):
+        request = self.context.get('request')
+        file_url = obj.fingerprint.url
+        return request.build_absolute_uri(file_url)
+
+
+class AssignmentStudentSerializer(serializers.ModelSerializer):
+    submissions = AssignmentSubmissionSerializer(read_only=True, many=True)
+    file = serializers.FileField(
+        max_length=None, use_url=True
+    )
+    creator = serializers.ReadOnlyField(source='created_by.name')
+    class Meta:
+        model = Assignment
         fields = '__all__'
+
+    def get_file_url(self, obj):
+        request = self.context.get('request')
+        file_url = obj.fingerprint.url
+        return request.build_absolute_uri(file_url)
+
+    def post_file_url(self, obj):
+        request = self.context.get('request')
+        file_url = obj.fingerprint.url
+        return request.build_absolute_uri(file_url)
+
+    def to_representation(self, instance):
+        # Call the parent class's to_representation method
+        data = super().to_representation(instance)
+        try:
+            request = self.context.get('request')
+            data["submissions"] = instance.submissions.count()
+            assignment_sub = instance.submissions.filter(created_by=request.user).first()
+            if assignment_sub:
+                data["submitted"] = True
+                data["score"] = "Pending"
+                data["remarks"] = ""
+                if assignment_sub.score:
+                    data["score"] = assignment_sub.score
+                if assignment_sub.remarks:
+                    data["remarks"] = assignment_sub.remarks
+        except:
+            pass
+
+        return data

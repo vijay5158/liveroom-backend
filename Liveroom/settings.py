@@ -96,9 +96,14 @@ TEMPLATES = [
 ASGI_APPLICATION = "Liveroom.asgi.application"
 
 # CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels.layers.InMemoryChannelLayer"
-#     }
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             'hosts': [(f"redis://{os.environ.get('REDIS_USER')}:{os.environ.get('REDIS_PASSWORD')}@{os.environ.get('REDIS_HOST')}:{os.environ.get('REDIS_PORT')}/0")],
+#             # 'username':os.environ.get('REDIS_USER'),
+#             # 'password':os.environ.get('REDIS_PASSWORD')
+#         },
+#     },
 # }
 
 CHANNEL_LAYERS = {
@@ -152,6 +157,8 @@ REST_FRAMEWORK = {
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = True
 CSRF_TRUSTED_ORIGINS = ['https://api.paathshaala.me']
+
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -266,3 +273,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 X_FRAME_OPTIONS = 'ALLOWALL'
 
 XS_SHARING_ALLOWED_METHODS = ['POST', 'GET', 'OPTIONS', 'PUT', 'DELETE']
+
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
+FILE_ALLOWED_EXTENSIONS = set(['pdf', 'docx', 'xlsx','mp3', 'mkv', 'mp4', 'ppt','pptx', 'odp', 'doc', 'png', 'jpeg', 'jpg'])

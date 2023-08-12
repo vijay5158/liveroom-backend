@@ -30,11 +30,14 @@ class WebSocketAuthMiddleware:
             # raw_token = scope['query_string']
             # print(token)
             # raw_token = scope['cookies'].get('token')
+            # print(scope)
             raw_token = self.get_token_from_scope(scope)
             validated_token = jwt_auth.get_validated_token(raw_token)
             user = jwt_auth.get_user(validated_token)
+            # print(validated_token)
             return user
-        except Exception:
+        except Exception as e:
+            print(e)
             return None
 
     def get_token_from_scope(self, scope):

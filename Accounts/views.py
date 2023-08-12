@@ -15,6 +15,7 @@ from .serializers import (ContactSerializer, RegistrationSerializer,
 from .face_detection import get_face_template
 from .helper import compress_and_resize, generate_unique_filename
 from django.core.files.base import ContentFile
+from Liveroom.utils.helper import avatar_allowed_file
 
 class ContactView(APIView):
     permission_classes = [AllowAny]
@@ -42,7 +43,7 @@ class UserViewSet(viewsets.ViewSet):
             serialized = UserSerializer(user)
             return Response(serialized.data,status=status.HTTP_200_OK)
 
-        return Response({"error":True},status=status.HTTP_400_BAD_REQUEST)
+        return Response({"success":False},status=status.HTTP_400_BAD_REQUEST)
 
     def partial_update(self,request,pk=None):
         user = request.user
@@ -51,6 +52,8 @@ class UserViewSet(viewsets.ViewSet):
             files = request.FILES
             if 'avatar' in files:
                 avatar = files.get('avatar')
+                if avatar.name=="" or not avatar_allowed_file(avatar.name):
+                    return Response({"success":False, "message":"Allowed avatar type is jpg, jpeg, png"},status=status.HTTP_400_BAD_REQUEST)
                 try:
                     compressed_avatar = compress_and_resize(avatar)
                     newFile = ContentFile(compressed_avatar, name=generate_unique_filename(avatar.name))
@@ -73,7 +76,7 @@ class UserViewSet(viewsets.ViewSet):
                 self, instance=user, validated_data=request.data)
                 return Response(serialized.data, status=status.HTTP_202_ACCEPTED)
 
-        return Response({"error":True},status=status.HTTP_400_BAD_REQUEST)
+        return Response({"success":False, "message":"Error, Try again!"},status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -157,7 +160,7 @@ class LogoutAPIView(APIView):
             token = RefreshToken(refresh_token)
             token.blacklist()
 
-            return Response({'message': 'Successfully logged out.'})
+            return Response({'message': 'Successfully logged out.'}, status=status.HTTP_200_OK)
 
         except Exception:
             return Response({'message': 'Invalid refresh token.'}, status=400)
