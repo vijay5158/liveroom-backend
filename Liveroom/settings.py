@@ -96,9 +96,14 @@ TEMPLATES = [
 ASGI_APPLICATION = "Liveroom.asgi.application"
 
 # CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels.layers.InMemoryChannelLayer"
-#     }
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             'hosts': [(f"redis://{os.environ.get('REDIS_USER')}:{os.environ.get('REDIS_PASSWORD')}@{os.environ.get('REDIS_HOST')}:{os.environ.get('REDIS_PORT')}/0")],
+#             # 'username':os.environ.get('REDIS_USER'),
+#             # 'password':os.environ.get('REDIS_PASSWORD')
+#         },
+#     },
 # }
 
 CHANNEL_LAYERS = {

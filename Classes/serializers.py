@@ -177,10 +177,12 @@ class AssignmentSerializer(serializers.ModelSerializer):
     file = serializers.FileField(
         max_length=None, use_url=True
     )
+    creator = serializers.ReadOnlyField(source='created_by.name')
     
+
     class Meta:
         model = Assignment
-        fields = '__all__'
+        fields = ("updated_at", "created_at", "id", "end_date", "start_date", "assignment", "file", "title", "creator", "submissions",)
 
     def get_file_url(self, obj):
         request = self.context.get('request')
@@ -198,7 +200,7 @@ class AssignmentStudentSerializer(serializers.ModelSerializer):
     file = serializers.FileField(
         max_length=None, use_url=True
     )
-    
+    creator = serializers.ReadOnlyField(source='created_by.name')
     class Meta:
         model = Assignment
         fields = '__all__'

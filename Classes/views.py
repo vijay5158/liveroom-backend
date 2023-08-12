@@ -398,10 +398,10 @@ class GetAssignmentAPIView(APIView):
             if classroom_query.exists():
                 classroom = classroom_query.first()
                 assignments = classroom.assignments.order_by("-created_at").all()
-                if assignments:
-                    serializer = AssignmentStudentSerializer(assignments, context={"request": request}, many=True)
-                    return Response({"data":serializer.data, "success": True}, status=status.HTTP_200_OK)
-                return Response({"message":"Assignments not found!", "success": False}, status=status.HTTP_400_BAD_REQUEST)
+                # if assignments:
+                serializer = AssignmentStudentSerializer(assignments, context={"request": request}, many=True)
+                return Response({"data":serializer.data, "success": True}, status=status.HTTP_200_OK)
+                # return Response({"message":"Assignments not found!", "success": False}, status=status.HTTP_400_BAD_REQUEST)
             return Response({"success":False, "message":"Classroom doesn't exist!"}, status=status.HTTP_400_BAD_REQUEST)        
 
         except:
@@ -468,7 +468,7 @@ class CreateAssignmentSubmissionAPIView(APIView):
 class AssignmentSubmissionAPIView(APIView):
     permission_classes=[IsAuthenticated, IsRoleTeacher]
     
-    def get(self, request, slug):
+    def post(self, request, slug):
         try:
             data = request.data
             assignment_id = data.get("assignment_id",None)
