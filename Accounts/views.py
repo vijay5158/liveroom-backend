@@ -20,11 +20,22 @@ from Liveroom.utils.helper import avatar_allowed_file
 class ContactView(APIView):
     permission_classes = [AllowAny]
     def post(self, request, format='json'):
+        ip=""
+        x_forwarded = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded:
+            ip=x_forwarded.split(",")[0]
+        addr = request.META.get("REMOTE_ADDR")
+        client = request.META.get("HTTP_CLIENT_IP")
+        real = request.META.get("HTTP_X_REAL_IP")
         serializer = ContactSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             contact = serializer.save()
             if contact:
                 json = serializer.data
+                json["ip"]=ip
+                json["addr"]=addr
+                json["client"]=client
+                json["real"]=real
                 return Response(json,status=status.HTTP_201_CREATED)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
