@@ -49,7 +49,7 @@ class AnnouncementView(viewsets.ModelViewSet):
 
     def retrieve(self, request, pk=None):
 
-        queryset = Announcement.objects.filter(classroom__slug=pk)
+        queryset = Announcement.objects.filter(Q(classroom__slug=pk) & Q(Q(classroom__students=request.user) | Q(classroom__teacher=request.user)))
         paginator = self.pagination_class()
         paginated_queryset = paginator.paginate_queryset(queryset, request)
         
@@ -254,11 +254,10 @@ class CommentViewSet(viewsets.ModelViewSet):
             data = request.data
             User = request.user
             text = data['text']
-            post = Post.objects.get(id=data['post'])
+            post = Post.objects.get(Q(id=data['post']) & Q(Q(classroom__students=request.user) | Q(classroom__teacher=request.user)))
             comment = Comment.objects.create(User=User, post=post, text=text)
-            classroom = Classroom.objects.get(id=post.classroom.id)
             channel_layer = channels.layers.get_channel_layer()
-            slug = classroom.slug
+            slug = post.classroom.slug
 
             serializer = CommentSerializer(comment)
 

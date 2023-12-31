@@ -5,7 +5,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+dev_settings.py
 # C extensions
 *.so
 liveroom-5158-firebase-adminsdk-qizec-405db0aecb.json
